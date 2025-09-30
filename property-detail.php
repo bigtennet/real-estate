@@ -36,46 +36,8 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
 
-// Get property files
-$stmt = $db->prepare("SELECT * FROM file_uploads WHERE property_id = ? ORDER BY file_type, created_at ASC");
-$stmt->execute([$property_id]);
-$files = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Separate images and videos
-$uploaded_images = array_filter($files, function($file) { return $file['file_type'] === 'image'; });
-$videos = array_filter($files, function($file) { return $file['file_type'] === 'video'; });
-
-// Get images from property JSON field as fallback
+// Get images from property JSON field
 $json_images = json_decode($property['images'], true) ?? [];
-
-// Combine uploaded images and JSON images
-$images = [];
-if (!empty($uploaded_images)) {
-    $images = $uploaded_images;
-} else if (!empty($json_images)) {
-    // Convert JSON images to the same format as uploaded images
-    foreach ($json_images as $index => $image_url) {
-        $images[] = [
-            'file_path' => $image_url,
-            'file_name' => 'Image ' . ($index + 1),
-            'is_primary' => $index === 0 ? 1 : 0
-        ];
-    }
-}
-
-// Get primary image
-$primary_image = null;
-foreach ($images as $image) {
-    if (isset($image['is_primary']) && $image['is_primary']) {
-        $primary_image = $image;
-        break;
-    }
-}
-if (!$primary_image && !empty($images)) {
-    $primary_image = $images[0];
-}
-
-// Get features
 $features = json_decode($property['features'], true) ?? [];
 ?>
 
@@ -125,31 +87,29 @@ $features = json_decode($property['features'], true) ?? [];
             <!-- Main Content -->
             <div class="lg:col-span-2 space-y-8">
                 <!-- Image Gallery -->
-                <?php if (!empty($images)): ?>
+                <?php if (!empty($json_images)): ?>
                 <div class="glass-card p-6 rounded-xl">
                     <h2 class="text-2xl font-bold text-white mb-6">Property Images</h2>
                     
                     <!-- Main Image -->
-                    <?php if ($primary_image): ?>
                     <div class="mb-6">
                         <img 
-                            src="<?php echo htmlspecialchars($primary_image['file_path']); ?>" 
+                            src="<?php echo htmlspecialchars($json_images[0]); ?>" 
                             alt="<?php echo htmlspecialchars($property['title']); ?>"
                             class="w-full h-96 object-cover rounded-xl"
                             id="main-image"
                         />
                     </div>
-                    <?php endif; ?>
                     
                     <!-- Thumbnail Grid -->
-                    <?php if (count($images) > 1): ?>
+                    <?php if (count($json_images) > 1): ?>
                     <div class="grid grid-cols-4 md:grid-cols-6 gap-4">
-                        <?php foreach ($images as $index => $image): ?>
+                        <?php foreach ($json_images as $index => $image_url): ?>
                         <img 
-                            src="<?php echo htmlspecialchars($image['file_path']); ?>" 
-                            alt="<?php echo htmlspecialchars($image['file_name'] ?? 'Property Image'); ?>"
+                            src="<?php echo htmlspecialchars($image_url); ?>" 
+                            alt="Property Image <?php echo $index + 1; ?>"
                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                            onclick="changeMainImage('<?php echo htmlspecialchars($image['file_path']); ?>')"
+                            onclick="changeMainImage('<?php echo htmlspecialchars($image_url); ?>')"
                         />
                         <?php endforeach; ?>
                     </div>
@@ -176,36 +136,6 @@ $features = json_decode($property['features'], true) ?? [];
                             <?php echo htmlspecialchars($feature); ?>
                         </div>
                         <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Video -->
-                <?php if (!empty($videos)): ?>
-                <div class="glass-card p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold text-white mb-4">Property Video</h2>
-                    <div class="space-y-4">
-                        <?php foreach ($videos as $video): ?>
-                        <video controls class="w-full rounded-xl">
-                            <source src="<?php echo htmlspecialchars($video['file_path']); ?>" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- External Video URL -->
-                <?php if (!empty($property['video_url'])): ?>
-                <div class="glass-card p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold text-white mb-4">Property Video</h2>
-                    <div class="aspect-video rounded-xl overflow-hidden">
-                        <iframe 
-                            src="<?php echo htmlspecialchars($property['video_url']); ?>" 
-                            class="w-full h-full"
-                            frameborder="0" 
-                            allowfullscreen>
-                        </iframe>
                     </div>
                 </div>
                 <?php endif; ?>
