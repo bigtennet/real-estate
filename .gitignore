@@ -1,0 +1,49 @@
+# Database credentials and sensitive files
+config/database.php
+
+# Uploaded files (keep structure but not actual files)
+uploads/images/*
+uploads/videos/*
+!uploads/images/.gitkeep
+!uploads/videos/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PHP session files
+sessions/
+
+# Cache files
+cache/
+tmp/
+
+# Backup files
+*.bak
+*.backup
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Node modules (if any)
+node_modules/
+
+# Composer files (if any)
+vendor/
+
+# Setup files (remove after deployment)
+setup-database.php
