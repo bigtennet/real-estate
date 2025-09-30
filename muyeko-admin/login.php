@@ -71,7 +71,7 @@ include '../includes/header.php';
 
         <div class="mt-6 text-center">
             <p class="text-gray-400 text-sm">
-                Default credentials: admin / admin123
+                Secure admin access only
             </p>
         </div>
     </div>

@@ -639,7 +639,7 @@ if (!isset($site_settings)) {
                     <a href="properties.php" class="text-white hover:text-blue-300 transition-colors">Properties</a>
                     <a href="about.php" class="text-white hover:text-blue-300 transition-colors">About</a>
                     <a href="contact.php" class="text-white hover:text-blue-300 transition-colors">Contact</a>
-                    <a href="admin/" class="glass-card px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all">
+                    <a href="muyeko-admin/" class="glass-card px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all">
                         <i data-lucide="settings" class="w-4 h-4 inline mr-2"></i>
                         Admin
                     </a>
@@ -666,7 +666,7 @@ if (!isset($site_settings)) {
                     <a href="properties.php" class="block px-3 py-2 text-white hover:text-blue-300 transition-colors">Properties</a>
                     <a href="about.php" class="block px-3 py-2 text-white hover:text-blue-300 transition-colors">About</a>
                     <a href="contact.php" class="block px-3 py-2 text-white hover:text-blue-300 transition-colors">Contact</a>
-                    <a href="admin/" class="block px-3 py-2 text-white hover:text-blue-300 transition-colors">
+                    <a href="muyeko-admin/" class="block px-3 py-2 text-white hover:text-blue-300 transition-colors">
                         <i data-lucide="settings" class="w-4 h-4 inline mr-2"></i>
                         Admin
                     </a>
