@@ -24,6 +24,11 @@ $stmt = $db->prepare($query);
 $stmt->execute([$property_id]);
 $property = $stmt->fetch(PDO::FETCH_ASSOC);
 
+if (!$property) {
+    header('Location: properties.php');
+    exit;
+}
+
 // Get settings for WhatsApp
 $stmt = $db->query("SELECT setting_key, setting_value FROM site_settings");
 $settings = [];
@@ -31,13 +36,8 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
 
-if (!$property) {
-    header('Location: properties.php');
-    exit;
-}
-
 // Get property files
-$stmt = $db->prepare("SELECT * FROM file_uploads WHERE property_id = ? ORDER BY file_type, is_primary DESC, created_at ASC");
+$stmt = $db->prepare("SELECT * FROM file_uploads WHERE property_id = ? ORDER BY file_type, created_at ASC");
 $stmt->execute([$property_id]);
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -66,7 +66,7 @@ if (!empty($uploaded_images)) {
 // Get primary image
 $primary_image = null;
 foreach ($images as $image) {
-    if ($image['is_primary']) {
+    if (isset($image['is_primary']) && $image['is_primary']) {
         $primary_image = $image;
         break;
     }
@@ -147,7 +147,7 @@ $features = json_decode($property['features'], true) ?? [];
                         <?php foreach ($images as $index => $image): ?>
                         <img 
                             src="<?php echo htmlspecialchars($image['file_path']); ?>" 
-                            alt="Property image <?php echo $index + 1; ?>"
+                            alt="<?php echo htmlspecialchars($image['file_name'] ?? 'Property Image'); ?>"
                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                             onclick="changeMainImage('<?php echo htmlspecialchars($image['file_path']); ?>')"
                         />
@@ -157,22 +157,9 @@ $features = json_decode($property['features'], true) ?? [];
                 </div>
                 <?php endif; ?>
 
-                <!-- Video -->
-                <?php if (!empty($videos)): ?>
+                <!-- Property Description -->
                 <div class="glass-card p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold text-white mb-6">Property Video</h2>
-                    <?php foreach ($videos as $video): ?>
-                    <video class="w-full h-96 object-cover rounded-xl" controls>
-                        <source src="<?php echo htmlspecialchars($video['file_path']); ?>" type="<?php echo htmlspecialchars($video['mime_type']); ?>">
-                        Your browser does not support the video tag.
-                    </video>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-
-                <!-- Description -->
-                <div class="glass-card p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold text-white mb-6">Description</h2>
+                    <h2 class="text-2xl font-bold text-white mb-4">Description</h2>
                     <div class="text-gray-300 leading-relaxed text-justify break-words whitespace-pre-wrap">
                         <?php echo nl2br(htmlspecialchars($property['description'])); ?>
                     </div>
@@ -181,84 +168,106 @@ $features = json_decode($property['features'], true) ?? [];
                 <!-- Features -->
                 <?php if (!empty($features)): ?>
                 <div class="glass-card p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold text-white mb-6">Features</h2>
+                    <h2 class="text-2xl font-bold text-white mb-4">Features</h2>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <?php foreach ($features as $feature): ?>
-                        <div class="flex items-center">
+                        <div class="flex items-center text-gray-300">
                             <i data-lucide="check" class="w-5 h-5 text-green-400 mr-3"></i>
-                            <span class="text-gray-300"><?php echo htmlspecialchars($feature); ?></span>
+                            <?php echo htmlspecialchars($feature); ?>
                         </div>
                         <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Video -->
+                <?php if (!empty($videos)): ?>
+                <div class="glass-card p-6 rounded-xl">
+                    <h2 class="text-2xl font-bold text-white mb-4">Property Video</h2>
+                    <div class="space-y-4">
+                        <?php foreach ($videos as $video): ?>
+                        <video controls class="w-full rounded-xl">
+                            <source src="<?php echo htmlspecialchars($video['file_path']); ?>" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- External Video URL -->
+                <?php if (!empty($property['video_url'])): ?>
+                <div class="glass-card p-6 rounded-xl">
+                    <h2 class="text-2xl font-bold text-white mb-4">Property Video</h2>
+                    <div class="aspect-video rounded-xl overflow-hidden">
+                        <iframe 
+                            src="<?php echo htmlspecialchars($property['video_url']); ?>" 
+                            class="w-full h-full"
+                            frameborder="0" 
+                            allowfullscreen>
+                        </iframe>
                     </div>
                 </div>
                 <?php endif; ?>
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-8">
                 <!-- Property Details -->
                 <div class="glass-card p-6 rounded-xl">
-                    <h3 class="text-xl font-bold text-white mb-6">Property Details</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">Property Details</h3>
                     <div class="space-y-4">
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <span class="text-gray-300">Bedrooms</span>
                             <span class="text-white font-semibold"><?php echo $property['bedrooms']; ?></span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <span class="text-gray-300">Bathrooms</span>
                             <span class="text-white font-semibold"><?php echo $property['bathrooms']; ?></span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <span class="text-gray-300">Area</span>
                             <span class="text-white font-semibold"><?php echo number_format($property['area']); ?> sq ft</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <span class="text-gray-300">Type</span>
                             <span class="text-white font-semibold"><?php echo $property['type']; ?></span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <span class="text-gray-300">Status</span>
-                            <span class="text-white font-semibold"><?php echo $property['status']; ?></span>
+                            <span class="text-white font-semibold <?php 
+                                echo $property['status'] === 'AVAILABLE' ? 'text-green-400' : 
+                                    ($property['status'] === 'SOLD' ? 'text-red-400' : 'text-yellow-400');
+                            ?>"><?php echo $property['status']; ?></span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Contact Information -->
                 <div class="glass-card p-6 rounded-xl">
-                    <h3 class="text-xl font-bold text-white mb-6">Contact Us</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">Contact Information</h3>
                     <div class="space-y-4">
-                        <div>
-                            <span class="text-gray-300">Phone</span>
-                            <div class="text-white font-semibold"><?php echo htmlspecialchars($settings['contact_phone'] ?? '+234 (0) 123-456-7890'); ?></div>
+                        <div class="flex items-center text-gray-300">
+                            <i data-lucide="phone" class="w-5 h-5 mr-3 text-blue-400"></i>
+                            <?php echo htmlspecialchars($settings['contact_phone'] ?? '+234 (0) 123-456-7890'); ?>
                         </div>
-                        <div>
-                            <span class="text-gray-300">Email</span>
-                            <div class="text-white font-semibold"><?php echo htmlspecialchars($settings['contact_email'] ?? 'info@premiumrealestate.ng'); ?></div>
+                        <div class="flex items-center text-gray-300">
+                            <i data-lucide="mail" class="w-5 h-5 mr-3 text-blue-400"></i>
+                            <?php echo htmlspecialchars($settings['contact_email'] ?? 'info@premiumrealestate.ng'); ?>
+                        </div>
+                        <div class="flex items-center text-gray-300">
+                            <i data-lucide="map-pin" class="w-5 h-5 mr-3 text-blue-400"></i>
+                            <?php echo htmlspecialchars($settings['contact_address'] ?? '123 Victoria Island, Lagos, Nigeria'); ?>
                         </div>
                     </div>
                     
                     <button 
                         onclick="openWhatsApp('<?php echo htmlspecialchars($settings['whatsapp_number'] ?? '+2341234567890'); ?>', '<?php echo htmlspecialchars($property['title']); ?>', '<?php echo htmlspecialchars($property['location']); ?>')"
-                        class="w-full btn-whatsapp mt-6"
+                        class="btn-whatsapp w-full mt-4 flex items-center justify-center"
                     >
                         <i data-lucide="message-circle" class="w-5 h-5 mr-2"></i>
-                        Contact Us
+                        Contact via WhatsApp
                     </button>
-                </div>
-
-                <!-- Share Property -->
-                <div class="glass-card p-6 rounded-xl">
-                    <h3 class="text-xl font-bold text-white mb-6">Share Property</h3>
-                    <div class="space-y-3">
-                        <button onclick="shareProperty()" class="w-full glass-card px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-all text-left">
-                            <i data-lucide="share-2" class="w-5 h-5 inline mr-3"></i>
-                            Share Link
-                        </button>
-                        <button onclick="copyLink()" class="w-full glass-card px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-all text-left">
-                            <i data-lucide="copy" class="w-5 h-5 inline mr-3"></i>
-                            Copy Link
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -267,32 +276,16 @@ $features = json_decode($property['features'], true) ?? [];
 
 <script>
 function changeMainImage(imageSrc) {
-    document.getElementById('main-image').src = imageSrc;
-}
-
-function openWhatsApp(whatsapp, title, location) {
-    const message = `Hi! I'm interested in the property "${title}" at ${location}. Could you provide more details?`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
-}
-
-function shareProperty() {
-    if (navigator.share) {
-        navigator.share({
-            title: '<?php echo addslashes($property['title']); ?>',
-            text: 'Check out this property: <?php echo addslashes($property['title']); ?>',
-            url: window.location.href
-        });
-    } else {
-        copyLink();
+    const mainImage = document.getElementById('main-image');
+    if (mainImage) {
+        mainImage.src = imageSrc;
     }
 }
 
-function copyLink() {
-    navigator.clipboard.writeText(window.location.href).then(function() {
-        alert('Link copied to clipboard!');
-    });
+function openWhatsApp(phone, property, location) {
+    const message = `Hi! I'm interested in the property: ${property} in ${location}. Please provide more information.`;
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
 }
 </script>
 
