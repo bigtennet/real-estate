@@ -1,5 +1,5 @@
 # Database credentials and sensitive files
-config/database.php
+# config/database.php (commented out for production deployment)
 
 # Uploaded files (keep structure but not actual files)
 uploads/images/*
